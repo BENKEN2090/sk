@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background: transparent;
+      margin: 0;
+      padding: 16px;
+      font-family: inherit;
+    }
+
+    /* ── Dark glass card ───────────────── */
+    .glass-card {
+      background: rgba(12,12,22,0.78);
+      backdrop-filter: blur(20px) saturate(1.5);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 22px;
+    }
+    .label-sm {
+      font-size: 11px;
+      color: rgba(255,255,255,0.42);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+
+    /* ── Flask SVG fill ────────────────── */
+    #flaskFill { transition: fill 0.5s ease; }
+
+    /* ── Ripple on drop ────────────────── */
+    @keyframes ripple {
+      0%   { transform: translateX(-50%) scale(0.3); opacity: 0.8; }
+      100% { transform: translateX(-50%) scale(2.6); opacity: 0; }
+    }
+    .ripple-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.45);
+      width: 34px; height: 10px;
+      bottom: 20px; left: 50%;
+      transform: translateX(-50%);
+      animation: ripple 0.65s ease-out forwards;
+      pointer-events: none;
+    }
+
+    /* ── Stir ──────────────────────────── */
+    @keyframes stir {
+      to { transform: rotate(360deg); }
+    }
+    .stirring { animation: stir 0.75s linear infinite; }
+
+    /* ── Equivalence glow ──────────────── */
+    @keyframes glowPulse {
+      0%, 100% { filter: drop-shadow(0 0 0px rgba(167,139,250,0)); }
+      50%       { filter: drop-shadow(0 0 14px rgba(167,139,250,0.8)); }
+    }
+    .eq-glow { animation: glowPulse 1.1s ease-in-out 4; }
+
+    /* ── pH gradient bar ───────────────── */
+    .ph-gradient {
+      background: linear-gradient(to right,
+        #e53e3e 0%, #ed8936 20%, #ecc94b 35%,
+        #48bb78 50%, #4299e1 65%, #667eea 78%, #805ad5 100%
+      );
+      border-radius: 999px;
+    }
+
+    /* ── Mode pill ─────────────────────── */
+    .mode-pill { display:inline-flex; border-radius:999px; border:1px solid rgba(255,255,255,0.18); overflow:hidden; }
+    .mode-pill button { padding:5px 14px; font-size:12px; border:none; cursor:pointer; transition: background 0.2s, color 0.2s; }
+    .mode-pill .active   { background:rgba(255,255,255,0.22); color:#fff; }
+    .mode-pill .inactive { background:transparent; color:rgba(255,255,255,0.45); }
+
+    /* ── Custom range slider ───────────── */
+    .vol-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 999px;
+      outline: none;
+      cursor: pointer;
+      background: linear-gradient(to right, var(--fill-color, #60a5fa) 0%, var(--fill-color, #60a5fa) var(--fill-pct,0%), rgba(255,255,255,0.12) var(--fill-pct,0%), rgba(255,255,255,0.12) 100%);
+      transition: background 0.1s;
+    }
+    .vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.18), 0 2px 8px rgba(0,0,0,0.35);
+      cursor: grab;
+      transition: box-shadow 0.15s, transform 0.1s;
+    }
+    .vol-slider::-webkit-slider-thumb:active {
+      cursor: grabbing;
+      transform: scale(1.18);
+      box-shadow: 0 0 0 5px rgba(255,255,255,0.28), 0 2px 12px rgba(0,0,0,0.4);
+    }
+    .vol-slider::-moz-range-thumb {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: none;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.18);
+      cursor: grab;
+    }
+
+    /* Fine-tune number input */
+    .fine-input {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: center;
+      width: 72px;
+      padding: 5px 6px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .fine-input:focus { border-color: rgba(255,255,255,0.45); }
+    /* hide spin buttons */
+    .fine-input::-webkit-inner-spin-button,
+    .fine-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    .btn-sm {
+      background: rgba(255,255,255,0.09);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.75);
+      border-radius: 7px;
+      padding: 4px 11px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.18s, transform 0.1s;
+      user-select: none;
+    }
+    .btn-sm:hover { background: rgba(255,255,255,0.17); }
+    .btn-sm:active { transform: scale(0.95); }
+
+    .eq-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.11);
+      border-radius: 10px;
+      padding: 7px 14px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.75);
+      text-align: center;
+      letter-spacing: 0.03em;
+    }
+    sub { font-size: 10px; }
+
+    /* Burette */
+    .burette-body {
+      width: 26px;
+      background: rgba(255,255,255,0.08);
+      border: 1.5px solid rgba(255,255,255,0.30);
+      border-radius: 3px 3px 0 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .burette-liquid {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      transition: height 0.25s ease, background-color 0.4s;
+    }
+    .burette-tip {
+      width: 5px; height: 16px;
+      background: rgba(255,255,255,0.20);
+      border: 1.5px solid rgba(255,255,255,0.30);
+      border-top: none;
+      border-radius: 0 0 3px 3px;
+      margin: 0 auto;
+    }
+    /* flowing drop while dragging */
+    @keyframes flowDrop {
+      0%   { opacity:1; transform: translateY(0) scaleY(1); }
+      100% { opacity:0; transform: translateY(52px) scaleY(1.4); }
+    }
+    .flow-drop {
+      position: absolute;
+      width: 4px; height: 6px;
+      border-radius: 50% 50% 50% 50% / 35% 35% 65% 65%;
+      left: 50%; transform: translateX(-50%);
+      top: 0;
+      animation: flowDrop 0.45s ease-in infinite;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="glass-card" style="max-width:540px; margin:0 auto; padding:22px 20px 18px;">
+
+    <!-- Header -->
+    <div style="margin-bottom:14px;">
+      <h2 style="margin:0; font-size:17px; font-weight:600; color:#fff; letter-spacing:0.02em;">Chuẩn độ Acid – Base</h2>
+      <p style="margin:4px 0 0; font-size:12px; color:rgba(255,255,255,0.4);">Chỉ thị Phenolphthalein · Kéo thanh trượt để điều chỉnh liều lượng</p>
+    </div>
+
+    <!-- Mode selector -->
+    <div style="display:flex; gap:10px; align-items:center; margin-bottom:14px;">
+      <span class="label-sm">Chế độ</span>
+      <div class="mode-pill" id="modePill">
+        <button class="active"   id="modeNaOH" onclick="setMode('NaOH_HCl')">NaOH → HCl</button>
+        <button class="inactive" id="modeHCl"  onclick="setMode('HCl_NaOH')">HCl → NaOH</button>
+      </div>
+    </div>
+
+    <!-- Burette | Flask | Info -->
+    <div style="display:flex; gap:14px; align-items:flex-end; margin-bottom:14px;">
+
+      <!-- Burette -->
+      <div style="display:flex; flex-direction:column; align-items:center; gap:4px; min-width:58px;">
+        <span class="label-sm" id="buretteLabel" style="margin-bottom:2px;">NaOH</span>
+        <div style="position:relative; height:120px; width:26px;">
+          <div class="burette-body" style="height:120px; width:26px;">
+            <div class="burette-liquid" id="buretteLiquid" style="height:100%;"></div>
+          </div>
+          <!-- scale -->
+          <div style="position:absolute; right:-20px; top:0; height:100%; display:flex; flex-direction:column; justify-content:space-between; pointer-events:none;">
+            <span style="font-size:9px; color:rgba(255,255,255,0.35);">0</span>
+            <span style="font-size:9px; color:rgba(255,255,255,0.35);">25</span>
+            <span style="font-size:9px; color:rgba(255,255,255,0.35);">50</span>
+          </div>
+        </div>
+        <div class="burette-tip" id="buretteTip"></div>
+        <!-- drop zone -->
+        <div id="dropZone" style="position:relative; height:52px; width:26px;">
+          <!-- flowing drop injected here by JS -->
+        </div>
+      </div>
+
+      <!-- Flask -->
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+        <div style="position:relative; width:110px; height:110px; margin:0 auto;" id="flaskWrap">
+          <svg width="110" height="110" viewBox="0 0 110 110" fill="none">
+            <rect x="44" y="8" width="22" height="32" rx="3"
+                  fill="rgba(255,255,255,0.07)" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+            <clipPath id="bodyClip">
+              <path d="M38 40 L18 90 Q14 100 22 104 L88 104 Q96 100 92 90 L72 40 Z"/>
+            </clipPath>
+            <rect x="10" y="30" width="90" height="80" clip-path="url(#bodyClip)"
+                  id="flaskFill" fill="rgba(255,255,255,0.04)"/>
+            <path d="M38 40 L18 90 Q14 100 22 104 L88 104 Q96 100 92 90 L72 40 Z"
+                  stroke="rgba(255,255,255,0.28)" stroke-width="1.5" fill="none"/>
+            <ellipse cx="55" cy="68" rx="27" ry="4" fill="rgba(255,255,255,0.08)"/>
+            <circle id="stirCircle" cx="55" cy="87" r="8"
+                    stroke="rgba(255,255,255,0.16)" stroke-width="1.5"
+                    stroke-dasharray="4 3" fill="none"/>
+          </svg>
+        </div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:-4px;">Flask: 25 mL · 0.1 M</div>
+      </div>
+
+      <!-- Info panel -->
+      <div style="min-width:100px; display:flex; flex-direction:column; gap:7px;">
+        <!-- pH -->
+        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.11); border-radius:12px; padding:8px 10px; text-align:center;">
+          <div class="label-sm" style="margin-bottom:1px;">pH</div>
+          <div id="phValue" style="font-size:26px; font-weight:700; color:#fff; line-height:1; letter-spacing:0.02em; transition:color 0.4s;">7.00</div>
+        </div>
+        <!-- Volume added -->
+        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.11); border-radius:12px; padding:8px 10px; text-align:center;">
+          <div class="label-sm" style="margin-bottom:1px;">Đã thêm</div>
+          <div id="volAdded" style="font-size:16px; font-weight:600; color:#93c5fd; line-height:1.2;">0.00 mL</div>
+        </div>
+        <!-- PP color -->
+        <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.11); border-radius:12px; padding:8px 10px; text-align:center;">
+          <div class="label-sm" style="margin-bottom:4px;">Màu PP</div>
+          <div id="colorDot" style="width:22px; height:22px; border-radius:50%; background:transparent; border:1.5px solid rgba(255,255,255,0.28); margin:0 auto; transition:background 0.5s, border-color 0.5s;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- pH gradient bar -->
+    <div style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+        <span class="label-sm">pH 0</span>
+        <span class="label-sm">Trung tính pH 7</span>
+        <span class="label-sm">pH 14</span>
+      </div>
+      <div style="position:relative; height:10px;">
+        <div class="ph-gradient" style="height:100%;"></div>
+        <div id="phPointer" style="position:absolute; top:-3px; width:3px; height:16px; background:#fff; border-radius:999px; left:50%; transform:translateX(-50%); transition:left 0.2s; box-shadow:0 0 7px rgba(255,255,255,0.75);"></div>
+      </div>
+    </div>
+
+    <!-- ── Volume slider ── -->
+    <div style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span class="label-sm">Thể tích titrant (mL)</span>
+        <!-- fine-tune: step buttons + number input -->
+        <div style="display:flex; align-items:center; gap:5px;">
+          <button class="btn-sm" id="btnMinus" onclick="nudge(-0.1)">−</button>
+          <input type="number" class="fine-input" id="fineInput" value="0.00" min="0" max="50" step="0.1" oninput="onFineInput(this.value)" />
+          <button class="btn-sm" id="btnPlus"  onclick="nudge(+0.1)">+</button>
+        </div>
+      </div>
+
+      <!-- slider -->
+      <input type="range" class="vol-slider" id="volSlider"
+             min="0" max="50" step="0.1" value="0"
+             oninput="onSlider(this.value)"
+             onmousedown="startFlow()" ontouchstart="startFlow()"
+             onmouseup="stopFlow()"   ontouchend="stopFlow()" />
+
+      <!-- tick marks below slider -->
+      <div style="display:flex; justify-content:space-between; margin-top:3px; padding:0 2px;">
+        <span style="font-size:10px; color:rgba(255,255,255,0.28);">0</span>
+        <span style="font-size:10px; color:rgba(255,255,255,0.28);">12.5</span>
+        <span style="font-size:10px; color:rgba(255,255,255,0.28);">25 ✦</span>
+        <span style="font-size:10px; color:rgba(255,255,255,0.28);">37.5</span>
+        <span style="font-size:10px; color:rgba(255,255,255,0.28);">50</span>
+      </div>
+    </div>
+
+    <!-- Equation -->
+    <div class="eq-card" id="eqCard" style="margin-bottom:10px;">
+      NaOH + HCl → NaCl + H<sub>2</sub>O
+    </div>
+
+    <!-- Status -->
+    <div id="statusMsg" style="font-size:12px; color:rgba(255,255,255,0.55); text-align:center; min-height:18px; margin-bottom:12px; transition:color 0.35s;">
+      Kéo thanh trượt để nhỏ NaOH vào bình HCl.
+    </div>
+
+    <!-- Reset -->
+    <div style="text-align:center;">
+      <button class="btn-sm" onclick="resetAll()" style="padding:6px 22px; font-size:13px;">↺ Làm lại</button>
+    </div>
+
+    <!-- Legend -->
+    <div style="margin-top:12px; display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:5px; font-size:11px; color:rgba(255,255,255,0.38);">
+        <span style="width:11px;height:11px;border-radius:50%;border:1px solid rgba(255,255,255,0.28);display:inline-block;"></span> Acid (không màu)
+      </div>
+      <div style="display:flex; align-items:center; gap:5px; font-size:11px; color:rgba(255,255,255,0.38);">
+        <span style="width:11px;height:11px;border-radius:50%;background:rgba(225,90,210,0.6);display:inline-block;"></span> Base nhẹ (hồng)
+      </div>
+      <div style="display:flex; align-items:center; gap:5px; font-size:11px; color:rgba(255,255,255,0.38);">
+        <span style="width:11px;height:11px;border-radius:50%;background:rgba(160,40,200,0.85);display:inline-block;"></span> Base dư (tím)
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Constants ────────────────────────────────────────────
+    const FLASK_VOL  = 25;    // mL
+    const CONC       = 0.1;   // mol/L (both)
+    const EQ_POINT   = 25.0;  // mL (when concentrations equal)
+    const BUR_MAX    = 50.0;
+
+    let mode     = 'NaOH_HCl';
+    let mlAdded  = 0;
+    let flowing  = false;
+    let flowEl   = null;
+    let stirTm   = null;
+    let eqGlowed = false;
+
+    // ── pH ───────────────────────────────────────────────────
+    function calcPH(v) {
+      const molT = v * CONC / 1000;
+      const molF = FLASK_VOL * CONC / 1000;
+      const totV = (FLASK_VOL + v) / 1000;
+
+      if (mode === 'NaOH_HCl') {
+        if (v < EQ_POINT - 0.005) {
+          return Math.max(0, -Math.log10((molF - molT) / totV));
+        } else if (v < EQ_POINT + 0.005) {
+          return 7.0;
+        } else {
+          const pOH = Math.max(0, -Math.log10((molT - molF) / totV));
+          return Math.min(14, 14 - pOH);
+        }
+      } else {
+        if (v < EQ_POINT - 0.005) {
+          const pOH = Math.max(0, -Math.log10((molF - molT) / totV));
+          return Math.min(14, 14 - pOH);
+        } else if (v < EQ_POINT + 0.005) {
+          return 7.0;
+        } else {
+          return Math.max(0, -Math.log10((molT - molF) / totV));
+        }
+      }
+    }
+
+    // ── Colors ───────────────────────────────────────────────
+    function flaskColor(ph) {
+      if (ph < 8.2) return `rgba(255,255,255,${0.03 + ph * 0.004})`;
+      if (ph < 9.5) {
+        const t = (ph - 8.2) / 1.3;
+        return `rgba(220,80,200,${0.18 + t * 0.35})`;
+      }
+      if (ph < 11) {
+        const t = (ph - 9.5) / 1.5;
+        return `rgba(190,50,215,${0.53 + t * 0.2})`;
+      }
+      return 'rgba(155,35,205,0.82)';
+    }
+    function ppDot(ph) {
+      if (ph < 8.2) return { bg:'transparent', bd:'rgba(255,255,255,0.28)' };
+      if (ph < 9.5) {
+        const t = (ph-8.2)/1.3;
+        return { bg:`rgba(230,100,215,${0.35+t*0.35})`, bd:'rgba(230,100,215,0.9)' };
+      }
+      if (ph < 11) {
+        const t = (ph-9.5)/1.5;
+        return { bg:`rgba(195,55,215,${0.7+t*0.2})`, bd:'rgba(195,55,215,1)' };
+      }
+      return { bg:'rgba(155,35,205,0.92)', bd:'rgba(155,35,205,1)' };
+    }
+    function phTextColor(ph) {
+      if (ph < 5)  return '#fc8181';
+      if (ph < 6.5) return '#fbd38d';
+      if (ph > 9)  return '#b794f4';
+      if (ph > 7.5) return '#76e4f7';
+      return '#68d391';
+    }
+
+    // ── Slider fill gradient ─────────────────────────────────
+    function updateSliderStyle(v) {
+      const slider = document.getElementById('volSlider');
+      const pct = (v / BUR_MAX * 100).toFixed(1) + '%';
+      const fillColor = mode === 'NaOH_HCl' ? '#60a5fa' : '#fc8181';
+      slider.style.setProperty('--fill-color', fillColor);
+      slider.style.setProperty('--fill-pct', pct);
+    }
+
+    // ── Drop flow animation ───────────────────────────────────
+    function startFlow() {
+      if (flowing) return;
+      flowing = true;
+      const zone = document.getElementById('dropZone');
+      flowEl = document.createElement('div');
+      flowEl.className = 'flow-drop';
+      flowEl.style.background = mode === 'NaOH_HCl'
+        ? 'rgba(96,165,250,0.9)' : 'rgba(252,129,129,0.9)';
+      zone.appendChild(flowEl);
+    }
+    function stopFlow() {
+      flowing = false;
+      if (flowEl) { flowEl.remove(); flowEl = null; }
+      // one final ripple
+      spawnRipple();
+    }
+    function spawnRipple() {
+      const wrap = document.getElementById('flaskWrap');
+      const r = document.createElement('div');
+      r.className = 'ripple-ring';
+      wrap.appendChild(r);
+      setTimeout(() => r.remove(), 680);
+    }
+
+    // ── Stir ─────────────────────────────────────────────────
+    function doStir() {
+      const sc = document.getElementById('stirCircle');
+      sc.classList.add('stirring');
+      clearTimeout(stirTm);
+      stirTm = setTimeout(() => sc.classList.remove('stirring'), 1200);
+    }
+
+    // ── Main UI update ────────────────────────────────────────
+    function updateUI() {
+      const ph = calcPH(mlAdded);
+      const phFmt = ph.toFixed(2);
+
+      document.getElementById('phValue').textContent = phFmt;
+      document.getElementById('phValue').style.color = phTextColor(ph);
+
+      const pct = (ph / 14 * 100).toFixed(2) + '%';
+      document.getElementById('phPointer').style.left = pct;
+
+      document.getElementById('volAdded').textContent = mlAdded.toFixed(2) + ' mL';
+
+      // Burette liquid
+      const bPct = Math.max(0, 1 - mlAdded / BUR_MAX);
+      document.getElementById('buretteLiquid').style.height = (bPct * 100) + '%';
+      document.getElementById('buretteLiquid').style.background =
+        mode === 'NaOH_HCl'
+          ? `rgba(96,165,250,${0.55 - (1-bPct)*0.2})`
+          : `rgba(252,129,129,${0.55 - (1-bPct)*0.2})`;
+
+      // Flask color
+      document.getElementById('flaskFill').setAttribute('fill', flaskColor(ph));
+
+      // PP dot
+      const pp = ppDot(ph);
+      document.getElementById('colorDot').style.background   = pp.bg;
+      document.getElementById('colorDot').style.borderColor  = pp.bd;
+
+      // Equivalence glow (once)
+      const diff = mlAdded - EQ_POINT;
+      if (Math.abs(diff) < 0.08 && !eqGlowed) {
+        eqGlowed = true;
+        const wrap = document.getElementById('flaskWrap');
+        wrap.classList.add('eq-glow');
+        setTimeout(() => wrap.classList.remove('eq-glow'), 4600);
+      }
+      if (Math.abs(diff) > 0.5) eqGlowed = false;
+
+      // Status
+      let msg = '', color = 'rgba(255,255,255,0.55)';
+      if (mlAdded < 0.05) {
+        msg = mode === 'NaOH_HCl'
+          ? 'Kéo thanh trượt để nhỏ NaOH vào bình HCl.'
+          : 'Kéo thanh trượt để nhỏ HCl vào bình NaOH.';
+      } else if (Math.abs(diff) < 0.08) {
+        msg  = '🎯 Điểm tương đương! Trung hoà hoàn toàn — pH = 7.00';
+        color = '#a78bfa';
+      } else if (diff > 8) {
+        msg  = mode === 'NaOH_HCl'
+          ? '⚠️ Dư nhiều NaOH — pH rất cao, dung dịch tím đậm.'
+          : '⚠️ Dư nhiều HCl — pH rất thấp, mất màu hoàn toàn.';
+        color = '#f87171';
+      } else if (diff > 0.1) {
+        msg  = mode === 'NaOH_HCl'
+          ? `Dư ${diff.toFixed(2)} mL NaOH — base nhẹ, pH = ${phFmt}`
+          : `Dư ${diff.toFixed(2)} mL HCl — acid nhẹ, pH = ${phFmt}`;
+        color = '#fbd38d';
+      } else if (diff < -0.1) {
+        msg  = mode === 'NaOH_HCl'
+          ? `Thiếu ${(-diff).toFixed(2)} mL NaOH — HCl còn dư, pH = ${phFmt}`
+          : `Thiếu ${(-diff).toFixed(2)} mL HCl — NaOH còn dư, pH = ${phFmt}`;
+        color = '#fbd38d';
+      } else {
+        msg = `pH = ${phFmt} — gần điểm tương đương, tiếp tục điều chỉnh...`;
+      }
+      const el = document.getElementById('statusMsg');
+      el.textContent = msg;
+      el.style.color = color;
+
+      doStir();
+      updateSliderStyle(mlAdded);
+    }
+
+    // ── Slider input ──────────────────────────────────────────
+    function onSlider(v) {
+      mlAdded = parseFloat(v);
+      document.getElementById('fineInput').value = mlAdded.toFixed(2);
+      if (flowing) spawnRipple();
+      updateUI();
+    }
+
+    // ── Fine-tune input ───────────────────────────────────────
+    function onFineInput(v) {
+      let val = parseFloat(v);
+      if (isNaN(val)) return;
+      val = Math.max(0, Math.min(BUR_MAX, val));
+      mlAdded = val;
+      document.getElementById('volSlider').value = val;
+      updateUI();
+    }
+
+    // ── Nudge ±0.1 mL ────────────────────────────────────────
+    function nudge(delta) {
+      mlAdded = Math.max(0, Math.min(BUR_MAX, parseFloat((mlAdded + delta).toFixed(2))));
+      document.getElementById('volSlider').value = mlAdded;
+      document.getElementById('fineInput').value = mlAdded.toFixed(2);
+      spawnRipple();
+      updateUI();
+    }
+
+    // ── Mode ─────────────────────────────────────────────────
+    function setMode(m) {
+      mode = m;
+      eqGlowed = false;
+      document.getElementById('modeNaOH').className = m === 'NaOH_HCl' ? 'active' : 'inactive';
+      document.getElementById('modeHCl').className  = m === 'HCl_NaOH' ? 'active' : 'inactive';
+      document.getElementById('buretteLabel').textContent = m === 'NaOH_HCl' ? 'NaOH' : 'HCl';
+      document.getElementById('eqCard').innerHTML = m === 'NaOH_HCl'
+        ? 'NaOH + HCl → NaCl + H<sub>2</sub>O'
+        : 'HCl + NaOH → NaCl + H<sub>2</sub>O';
+      resetAll();
+    }
+
+    // ── Reset ─────────────────────────────────────────────────
+    function resetAll() {
+      mlAdded  = 0;
+      eqGlowed = false;
+      stopFlow();
+      document.getElementById('volSlider').value = 0;
+      document.getElementById('fineInput').value = '0.00';
+      document.getElementById('stirCircle').classList.remove('stirring');
+      document.getElementById('flaskWrap').classList.remove('eq-glow');
+      updateUI();
+    }
+
+    // init
+    setMode('NaOH_HCl');
+  </script>
+</body>
+</html>
